@@ -6,6 +6,8 @@ import { StackerCrane, bayToWorldX, levelToWorldY } from './StackerCrane.js';
 import { LoadManager } from './LoadManager.js';
 import { JobScheduler, JOB_TYPE } from './JobScheduler.js';
 import { AutoController } from './AutoController.js';
+import { MobileSorter } from './MobileSorter.js';
+import { SorterController } from './SorterController.js';
 
 // ── レンダラー ─────────────────────────────────────────────
 const container = document.getElementById('canvas-container');
@@ -60,7 +62,9 @@ const warehouse   = new Warehouse(scene, physics);
 const crane       = new StackerCrane(scene, physics);
 const loadManager = new LoadManager(scene);
 const scheduler   = new JobScheduler();
-const autoCtrl    = new AutoController(crane, warehouse, loadManager, scheduler);
+const sorter      = new MobileSorter(scene);
+const sorterCtrl  = new SorterController(sorter);
+const autoCtrl    = new AutoController(crane, warehouse, loadManager, scheduler, sorterCtrl);
 
 // 初期ロード（ラックにパレットをランダムに配置）
 const initLoads = [
@@ -131,7 +135,8 @@ document.getElementById('btn-exec-retrieve').addEventListener('click', () => {
   if (!validCell(side, bay, level)) return alert('無効なアドレス');
   if (!warehouse.isCellOccupied(side, bay, level)) return alert(`セル ${addrStr(side,bay,level)} は空き`);
 
-  scheduler.addJob(JOB_TYPE.RETRIEVE, { sourceSide: side, sourceBay: bay, sourceLevel: level });
+  const destPort = document.getElementById('ret-port').value || null;
+  scheduler.addJob(JOB_TYPE.RETRIEVE, { sourceSide: side, sourceBay: bay, sourceLevel: level, destPort });
 });
 
 // ── 移動実行 ─────────────────────────────────────────────
@@ -227,6 +232,8 @@ function animate() {
   physics.step(dt);
   crane.update(dt);
   autoCtrl.update(dt);
+  sorter.step(dt);
+  sorterCtrl.update(dt);
 
   // UI ステータス更新
   const p = crane.pos;
@@ -238,11 +245,19 @@ function animate() {
   document.getElementById('craneStatus').textContent = crane.emergency
     ? '⚠ 非常停止中'
     : (autoCtrl.statusText || (crane.isIdle ? '待機中' : '動作中'));
+  document.getElementById('sorterStatus').textContent = sorterCtrl.statusText;
+
+  // ソーターポート状態更新
+  sorter.portStatus.forEach(({ label, count }) => {
+    const el = document.getElementById(`port-count-${label}`);
+    if (el) el.textContent = count;
+  });
 
   // モータ監視パネル更新
   updateMotorUI('t', crane.travelMotor);
   updateMotorUI('l', crane.liftMotor);
   updateMotorUI('f', crane.forkMotor);
+  updateMotorUI('s', sorter.cartMotor);
 
   frames++;
   fpsTimer += dt;
@@ -259,19 +274,39 @@ animate();
 
 // ── モータUI更新 ─────────────────────────────────────────
 function updateMotorUI(id, m) {
-  const pct = Math.min(250, Math.abs(m.torquePct));
-  const bar = document.getElementById(`bar-${id === 't' ? 'travel' : id === 'l' ? 'lift' : 'fork'}`);
-  bar.style.width = Math.min(100, pct / 2.5) + '%';
-  bar.classList.toggle('bar-over', pct > 100);
+  const pct   = Math.min(250, Math.abs(m.torquePct));
+  const barId = ({ t: 'travel', l: 'lift', f: 'fork', s: 'sorter' })[id] ?? id;
+  const bar   = document.getElementById(`bar-${barId}`);
+  if (bar) {
+    bar.style.width = Math.min(100, pct / 2.5) + '%';
+    bar.classList.toggle('bar-over', pct > 100);
+  }
 
   const pfx = 'm' + id;
-  document.getElementById(pfx + '-rpm').textContent  = Math.round(m.motorRPM) + ' rpm';
+  const rpmEl = document.getElementById(pfx + '-rpm');
+  if (rpmEl) rpmEl.textContent = Math.round(m.motorRPM) + ' rpm';
   const trqEl = document.getElementById(pfx + '-trq');
-  trqEl.textContent = m.torquePct.toFixed(1) + ' %';
-  trqEl.className   = 'm-val-num' + (Math.abs(m.torquePct) > 100 ? ' hi' : '');
-  document.getElementById(pfx + '-cur').textContent  = m.current.toFixed(1) + ' A';
-  document.getElementById(pfx + '-freq').textContent = m.frequency.toFixed(1) + ' Hz';
+  if (trqEl) {
+    trqEl.textContent = m.torquePct.toFixed(1) + ' %';
+    trqEl.className   = 'm-val-num' + (Math.abs(m.torquePct) > 100 ? ' hi' : '');
+  }
+  const curEl = document.getElementById(pfx + '-cur');
+  if (curEl) curEl.textContent = m.current.toFixed(1) + ' A';
+  const frqEl = document.getElementById(pfx + '-freq');
+  if (frqEl) frqEl.textContent = m.frequency.toFixed(1) + ' Hz';
 }
+
+// ── カメラ視点切替 ────────────────────────────────────────
+document.getElementById('btn-view-sorter')?.addEventListener('click', () => {
+  camera.position.set(-6, 8, 14);
+  controls.target.set(-6, 1.5, 3);
+  controls.update();
+});
+document.getElementById('btn-view-crane')?.addEventListener('click', () => {
+  camera.position.set(centerX, topY + 4, 22);
+  controls.target.set(centerX, topY / 2, 0);
+  controls.update();
+});
 
 // ── ユーティリティ ────────────────────────────────────────
 function validCell(side, bay, level) {

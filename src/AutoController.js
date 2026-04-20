@@ -13,11 +13,12 @@ const LIFT_THRESH = 0.03;
 const FORK_LIFT = 0.08; // m
 
 export class AutoController {
-  constructor(crane, warehouse, loadManager, scheduler) {
+  constructor(crane, warehouse, loadManager, scheduler, sorterCtrl = null) {
     this.crane       = crane;
     this.warehouse   = warehouse;
     this.loadManager = loadManager;
     this.scheduler   = scheduler;
+    this.sorterCtrl  = sorterCtrl;
 
     this._steps   = [];
     this._stepIdx = 0;
@@ -129,6 +130,9 @@ export class AutoController {
           if (step.toCell) {
             const { side, bay, level } = step.toCell;
             this.warehouse.setLoad(side, bay, level, mesh);
+          } else if (step.destPort && this.sorterCtrl) {
+            // ST2 に降ろした後、仕分けコントローラへ引き継ぎ
+            this.sorterCtrl.addSortJob(mesh, step.destPort);
           }
         }
         this._nextStep();
@@ -178,8 +182,8 @@ export class AutoController {
     ];
   }
 
-  // 出庫: sourceCell → ST2
-  _retrieveSteps({ sourceSide, sourceBay, sourceLevel }) {
+  // 出庫: sourceCell → ST2 → (任意) ソーター
+  _retrieveSteps({ sourceSide, sourceBay, sourceLevel, destPort }) {
     const st2    = STATIONS.ST2;
     const st2Z   = stationWorldZ(st2.side);
 
@@ -200,7 +204,7 @@ export class AutoController {
       { type: 'FORK_EXTEND',  side: st2.side,                    label: 'ST2へフォーク伸長' },
       // 下定位置へ降ろす: パレットを ST2 に着座させる
       { type: 'LIFT_TO',      y: st2.y - FORK_LIFT,              label: 'ST2に降ろす' },
-      { type: 'PLACE',        destPos },
+      { type: 'PLACE',        destPos, destPort: destPort ?? null },
       { type: 'FORK_RETRACT' },
     ];
   }

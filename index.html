@@ -164,6 +164,7 @@
     .bar-travel  { background: linear-gradient(90deg, #2266cc, #44aaff); }
     .bar-lift    { background: linear-gradient(90deg, #226622, #44ff88); }
     .bar-fork    { background: linear-gradient(90deg, #884400, #ffaa44); }
+    .bar-sorter  { background: linear-gradient(90deg, #884488, #ff44ff); }
     .bar-over    { background: linear-gradient(90deg, #cc2222, #ff6666) !important; }
     .m-vals { display: grid; grid-template-columns: 1fr 1fr; gap: 1px 8px; font-size: 9.5px; }
     .m-val-label { color: #456; }
@@ -220,8 +221,8 @@
               <option value="-1">L 左</option>
               <option value="1">R 右</option>
             </select>
-            <input type="number" id="ret-bay"   min="1" max="10" value="1">
-            <input type="number" id="ret-level" min="1" max="6"  value="1">
+            <input type="number" id="ret-bay"   min="1" max="20" value="1">
+            <input type="number" id="ret-level" min="1" max="10" value="1">
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin:6px 0;color:#456;font-size:18px;">
@@ -230,6 +231,17 @@
         <div class="form-row">
           <span class="station-badge st2">ST2</span>
           <span style="font-size:11px;color:#567;flex:1">出庫ステーション</span>
+        </div>
+        <div class="form-row" style="margin-top:6px">
+          <span class="form-label">仕分先</span>
+          <select id="ret-port" style="flex:1;font-size:11px;background:#0d2244;border:1px solid #2a4a7a;color:#8bf;border-radius:3px;padding:3px 5px">
+            <option value="">仕分なし</option>
+            <option value="A">ポート A</option>
+            <option value="B">ポート B</option>
+            <option value="C">ポート C</option>
+            <option value="D">ポート D</option>
+            <option value="E">ポート E</option>
+          </select>
         </div>
         <button class="btn-exec" id="btn-exec-retrieve">出庫実行</button>
       </div>
@@ -292,6 +304,25 @@
     <!-- 状態 -->
     <div class="section-title" style="margin-top:10px">クレーン状態</div>
     <div id="craneStatus">待機中</div>
+    <div class="section-title" style="margin-top:8px">ソーター状態</div>
+    <div id="sorterStatus" style="font-size:11px;color:#fc8;font-weight:bold">仕分待機</div>
+
+    <!-- ソーターポート -->
+    <div class="section-title" style="margin-top:8px">ポート蓄積数</div>
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:4px">
+      <div style="text-align:center;font-size:9px;color:#f66">A<br><span id="port-count-A" style="font-size:12px;font-weight:bold;color:#f66">0</span></div>
+      <div style="text-align:center;font-size:9px;color:#4c4">B<br><span id="port-count-B" style="font-size:12px;font-weight:bold;color:#4c4">0</span></div>
+      <div style="text-align:center;font-size:9px;color:#48f">C<br><span id="port-count-C" style="font-size:12px;font-weight:bold;color:#48f">0</span></div>
+      <div style="text-align:center;font-size:9px;color:#fa0">D<br><span id="port-count-D" style="font-size:12px;font-weight:bold;color:#fa0">0</span></div>
+      <div style="text-align:center;font-size:9px;color:#c4f">E<br><span id="port-count-E" style="font-size:12px;font-weight:bold;color:#c4f">0</span></div>
+    </div>
+
+    <!-- 視点切替 -->
+    <div class="section-title" style="margin-top:10px">視点</div>
+    <div class="btn-2col" style="margin-top:4px">
+      <button id="btn-view-crane" style="font-size:10px">倉庫</button>
+      <button id="btn-view-sorter" style="font-size:10px">ソーター</button>
+    </div>
   </div>
 
   <!-- ジョブキュー -->
@@ -334,6 +365,17 @@
         <span class="m-val-label">トルク</span><span class="m-val-num" id="mf-trq">0 %</span>
         <span class="m-val-label">電流</span><span class="m-val-num" id="mf-cur">0.0 A</span>
         <span class="m-val-label">周波数</span><span class="m-val-num" id="mf-freq">0.0 Hz</span>
+      </div>
+    </div>
+
+    <div class="m-row">
+      <div class="m-name">ソーターモータ <span>2.2kW / 4P</span></div>
+      <div class="m-bar-bg"><div class="m-bar bar-sorter" id="bar-sorter" style="width:0%"></div></div>
+      <div class="m-vals">
+        <span class="m-val-label">回転数</span><span class="m-val-num" id="ms-rpm">0 rpm</span>
+        <span class="m-val-label">トルク</span><span class="m-val-num" id="ms-trq">0 %</span>
+        <span class="m-val-label">電流</span><span class="m-val-num" id="ms-cur">0.0 A</span>
+        <span class="m-val-label">周波数</span><span class="m-val-num" id="ms-freq">0.0 Hz</span>
       </div>
     </div>
   </div>
