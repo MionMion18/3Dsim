@@ -15,8 +15,8 @@ const C = RACK_CONFIG;
 
 // ステーション定義 (Z = ±(aisleWidth/2 + depth/2) = ±1.5)
 export const STATIONS = {
-  ST1: { id: 'ST1', label: 'ST1 入庫', side: -1, x: -0.5, y: 0.18 },
-  ST2: { id: 'ST2', label: 'ST2 出庫', side:  1, x: -0.5, y: 0.18 },
+  ST1: { id: 'ST1', label: 'ST1 入庫', side: -1, x: 0.7, y: 0.18 },
+  ST2: { id: 'ST2', label: 'ST2 出庫', side:  1, x: 0.7, y: 0.18 },
 };
 
 export function stationWorldZ(side) {

@@ -6,8 +6,11 @@ import { StackerCrane, bayToWorldX, levelToWorldY } from './StackerCrane.js';
 import { LoadManager } from './LoadManager.js';
 import { JobScheduler, JOB_TYPE } from './JobScheduler.js';
 import { AutoController } from './AutoController.js';
-import { MobileSorter } from './MobileSorter.js';
+import { MobileSorter, SORTER_CONFIG } from './MobileSorter.js';
 import { SorterController } from './SorterController.js';
+import { StationConveyor } from './StationConveyor.js';
+import { HumanoidRobot } from './HumanoidRobot.js';
+import { ControlPanel3D } from './ControlPanel3D.js';
 
 // ── レンダラー ─────────────────────────────────────────────
 const container = document.getElementById('canvas-container');
@@ -65,10 +68,52 @@ const scheduler   = new JobScheduler();
 const sorter      = new MobileSorter(scene);
 const sorterCtrl  = new SorterController(sorter);
 const autoCtrl    = new AutoController(crane, warehouse, loadManager, scheduler, sorterCtrl);
+const robot        = new HumanoidRobot(scene);
+const controlPanel = new ControlPanel3D(scene);
+const st1Conv      = new StationConveyor(scene, {
+  startX: -4.0,
+  endX:   STATIONS.ST1.x,
+  z:      stationWorldZ(STATIONS.ST1.side),
+  y:      STATIONS.ST1.y,
+});
+
+// ── モーダル制御 ───────────────────────────────────────────
+const opModal = document.getElementById('op-modal');
+function openModal()  { opModal.classList.add('open'); }
+function closeModal() { opModal.classList.remove('open'); }
+
+document.getElementById('modal-close').addEventListener('click', closeModal);
+opModal.addEventListener('click', e => { if (e.target === opModal) closeModal(); });
+window.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+
+// ── 3D パネルへのレイキャスター ───────────────────────────
+const raycaster = new THREE.Raycaster();
+const _mouse    = new THREE.Vector2();
+renderer.domElement.addEventListener('click', e => {
+  _mouse.x = (e.clientX / window.innerWidth)  *  2 - 1;
+  _mouse.y = (e.clientY / window.innerHeight) * -2 + 1;
+  raycaster.setFromCamera(_mouse, camera);
+  if (raycaster.intersectObject(controlPanel.screenMesh).length > 0) openModal();
+});
+
+// ソーターがポートへ排出したパレットをロボットが回収
+const _SHUTE_Z0   = SORTER_CONFIG.z + SORTER_CONFIG.convWidth / 2;
+const _PORT_TGT_Z = _SHUTE_Z0 + SORTER_CONFIG.portZDepth + 0.6;
+sorterCtrl.onPortComplete = (label, pallet) => {
+  const idx  = sorter.getPortIndex(label);
+  const port = sorter.ports[idx];
+  robot.assignPickup(pallet, new THREE.Vector3(port.x, 0, _PORT_TGT_Z));
+};
+
+// ポート未指定で ST2 に置かれたパレットもロボットが回収
+autoCtrl.onST2Place = (pallet, destPos) => {
+  robot.assignPickup(pallet, new THREE.Vector3(destPos.x + 1.5, 0, destPos.z + 1.2));
+};
 
 // 初期ロード（ラックにパレットをランダムに配置）
 const initLoads = [
-  { side: -1, bay:  0, level: 0 }, { side: -1, bay:  2, level: 1 },
+  /* bay 0 / level 0 (side -1) は ST1 と同座標なので省略 */
+                     { side: -1, bay:  2, level: 1 },
   { side: -1, bay:  4, level: 0 }, { side: -1, bay:  6, level: 2 },
   { side: -1, bay:  8, level: 1 }, { side: -1, bay: 10, level: 0 },
   { side: -1, bay: 12, level: 3 }, { side: -1, bay: 14, level: 1 },
@@ -87,11 +132,13 @@ initLoads.forEach(({ side, bay, level }) => {
   }
 });
 
-// ST1 に待機パレット
+// ST1 入庫コンベアでパレットを搬送
 function spawnST1Pallet() {
   const st = STATIONS.ST1;
   const z  = stationWorldZ(st.side);
-  return loadManager.createPallet(new THREE.Vector3(st.x, st.y + 0.28, z));
+  const pallet = loadManager.createPallet(new THREE.Vector3(st1Conv.startX, st.y + 0.28, z));
+  st1Conv.transport(pallet);
+  return pallet;
 }
 
 // ── タブ切替 ─────────────────────────────────────────────
@@ -118,7 +165,7 @@ document.getElementById('btn-exec-store').addEventListener('click', () => {
   // ST1 にパレットがなければ生成
   const st1 = STATIONS.ST1;
   const st1Z = stationWorldZ(st1.side);
-  const hasST1Load = loadManager.loads.some(
+  const hasST1Load = st1Conv.isTransporting || loadManager.loads.some(
     l => Math.abs(l.position.x - st1.x) < 0.6 && Math.abs(l.position.z - st1Z) < 0.6
   );
   if (!hasST1Load) spawnST1Pallet();
@@ -234,6 +281,9 @@ function animate() {
   autoCtrl.update(dt);
   sorter.step(dt);
   sorterCtrl.update(dt);
+  st1Conv.step(dt);
+  robot.update(dt);
+  controlPanel.update(dt);
 
   // UI ステータス更新
   const p = crane.pos;
@@ -246,6 +296,7 @@ function animate() {
     ? '⚠ 非常停止中'
     : (autoCtrl.statusText || (crane.isIdle ? '待機中' : '動作中'));
   document.getElementById('sorterStatus').textContent = sorterCtrl.statusText;
+  document.getElementById('robotStatus').textContent  = robot.statusText;
 
   // ソーターポート状態更新
   sorter.portStatus.forEach(({ label, count }) => {
@@ -300,6 +351,11 @@ function updateMotorUI(id, m) {
 document.getElementById('btn-view-sorter')?.addEventListener('click', () => {
   camera.position.set(-6, 8, 14);
   controls.target.set(-6, 1.5, 3);
+  controls.update();
+});
+document.getElementById('btn-view-robot')?.addEventListener('click', () => {
+  camera.position.set(-6, 6, 14);
+  controls.target.set(-5, 1, 7);
   controls.update();
 });
 document.getElementById('btn-view-crane')?.addEventListener('click', () => {

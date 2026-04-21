@@ -24,6 +24,7 @@ export class AutoController {
     this._stepIdx = 0;
     this._job     = null;
     this.statusText = '待機中';
+    this.onST2Place = null;
   }
 
   update(_dt) {
@@ -133,6 +134,9 @@ export class AutoController {
           } else if (step.destPort && this.sorterCtrl) {
             // ST2 に降ろした後、仕分けコントローラへ引き継ぎ
             this.sorterCtrl.addSortJob(mesh, step.destPort);
+          } else {
+            // ポート未指定で ST2 に置いた場合: ロボットへ通知
+            this.onST2Place?.(mesh, step.destPos);
           }
         }
         this._nextStep();

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { InverterMotor } from './InverterMotor.js';
 
 export const SORTER_CONFIG = {
-  inputX:    -0.5,   // ST2 入力点 X
+  inputX:     0.7,   // ST2 入力点 X (rack bay-0 位置に合わせた)
   endX:      -11.5,  // コンベア終端 X
   z:          1.5,   // ST2 と同じ Z
   y:          0.26,  // コンベア上面高さ
@@ -37,7 +37,8 @@ export class MobileSorter {
     this.cartMotor.position = SC.inputX;
     this.cartMotor.target   = SC.inputX;
 
-    this.load = null;
+    this.load     = null;
+    this._rollers = []; // アニメーション用ローラーグループ配列
 
     this.ports = SC.portLabels.map((label, i) => ({
       label, index: i,
@@ -84,15 +85,18 @@ export class MobileSorter {
     frameMesh.castShadow = true;
     this.rootGroup.add(frameMesh);
 
-    // ── ローラー ──
+    // ── ローラー (グループ化でスピンアニメ対応) ──
     const rollerCount = Math.floor(convLen / 0.28);
     const rollerGeo   = new THREE.CylinderGeometry(0.038, 0.038, SC.convWidth - 0.05, 8);
     const rollerMat   = this._mat(0x8aaac0, 0.8, 0.2);
     for (let i = 0; i <= rollerCount; i++) {
+      const rg = new THREE.Group();
+      rg.position.set(SC.inputX - i * (convLen / rollerCount), SC.y + 0.003, SC.z);
       const r = new THREE.Mesh(rollerGeo, rollerMat);
       r.rotation.z = Math.PI / 2;
-      r.position.set(SC.inputX - i * (convLen / rollerCount), SC.y + 0.003, SC.z);
-      this.rootGroup.add(r);
+      rg.add(r);
+      this.rootGroup.add(rg);
+      this._rollers.push(rg);
     }
 
     // ── ガイドレール ──
@@ -236,6 +240,11 @@ export class MobileSorter {
   step(dt) {
     this.cartMotor.step(dt);
     this._syncCart();
+
+    // ローラースピンアニメーション (カート速度に連動)
+    const omega = this.cartMotor.velocity / 0.038; // rad/s
+    for (const rg of this._rollers) rg.rotation.x += omega * dt;
+
     if (this.load) {
       this.load.position.set(this.cartMotor.position, SC.y + 0.28, SC.z);
     }

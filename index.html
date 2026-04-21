@@ -9,105 +9,16 @@
     #canvas-container { width: 100vw; height: 100vh; }
     canvas { display: block; }
 
-    /* ── 左パネル ── */
-    #panel {
-      position: fixed;
-      top: 16px; left: 16px;
-      width: 272px;
-      background: rgba(8,18,36,0.88);
-      border: 1px solid #1e4080;
-      border-radius: 8px;
-      padding: 14px;
-      backdrop-filter: blur(6px);
-      z-index: 10;
+    /* ── 非常停止 (常時表示) ── */
+    #btn-emergency {
+      position: fixed; bottom: 42px; left: 14px;
+      background: #2a0000; border: 1px solid #880000; color: #ff6666;
+      font-size: 11px; padding: 6px 10px; border-radius: 4px;
+      cursor: pointer; font-family: inherit; z-index: 20;
+      transition: all 0.15s;
     }
-    #panel h2 {
-      font-size: 12px; color: #5af; letter-spacing: 2px;
-      text-transform: uppercase; margin-bottom: 12px;
-      border-bottom: 1px solid #1e4080; padding-bottom: 6px;
-    }
-
-    /* セクション */
-    .section { margin-bottom: 14px; }
-    .section-title {
-      font-size: 10px; color: #678; letter-spacing: 1px;
-      text-transform: uppercase; margin-bottom: 6px;
-    }
-
-    /* タブ */
-    .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
-    .tab {
-      flex: 1; padding: 5px 2px; font-size: 11px;
-      background: #0d2244; border: 1px solid #1e4080;
-      color: #668; border-radius: 4px; cursor: pointer;
-      font-family: inherit; transition: all 0.15s; text-align: center;
-    }
-    .tab.active {
-      background: #0a4080; border-color: #5af; color: #5ff;
-      font-weight: bold;
-    }
-    .tab:hover:not(.active) { background: #1a3060; color: #aaf; }
-
-    /* ジョブ入力フォーム */
-    .job-form { display: none; }
-    .job-form.visible { display: block; }
-    .form-row {
-      display: flex; align-items: center; gap: 6px;
-      margin-bottom: 8px; flex-wrap: wrap;
-    }
-    .form-label { font-size: 10px; color: #789; min-width: 46px; }
-    .addr-inputs { display: flex; gap: 3px; align-items: center; flex: 1; }
-    select, input[type=number] {
-      background: #0d2244; border: 1px solid #2a4a7a;
-      color: #8bf; font-family: inherit; font-size: 12px;
-      border-radius: 3px; padding: 3px 5px;
-    }
-    select { cursor: pointer; }
-    select.side-sel { width: 46px; }
-    input[type=number] { width: 42px; }
-    select:focus, input:focus { border-color: #5af; outline: none; color: #fff; }
-
-    .arrow-label {
-      font-size: 11px; color: #5af; text-align: center;
-      margin: 4px 0; display: flex; align-items: center; gap: 6px;
-    }
-    .arrow-label span { flex: 1; border-top: 1px dashed #2a5090; }
-    .station-badge {
-      display: inline-flex; align-items: center; justify-content: center;
-      padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold;
-    }
-    .st1 { background: #2a1e00; border: 1px solid #d4a017; color: #f0c040; }
-    .st2 { background: #001a0a; border: 1px solid #1a8a3a; color: #40f080; }
-
-    /* ボタン */
-    button {
-      background: #0d2244; border: 1px solid #1e4080; color: #8bf;
-      padding: 6px 10px; font-size: 11px; border-radius: 4px;
-      cursor: pointer; transition: all 0.15s; font-family: inherit;
-    }
-    button:hover { background: #1a3a6a; border-color: #5af; color: #fff; }
-    button:active { background: #2a5aaa; }
-    .btn-exec {
-      width: 100%; margin-top: 8px;
-      background: #0a3a60; border-color: #2a7aaa; color: #6df;
-      font-size: 12px; padding: 8px;
-    }
-    .btn-exec:hover { background: #1a5a80; border-color: #5af; color: #fff; }
-    .btn-emergency {
-      width: 100%; background: #2a0000; border-color: #880000;
-      color: #ff6666; font-size: 12px; padding: 7px; margin-top: 6px;
-    }
-    .btn-emergency:hover { background: #400000; border-color: #ff3333; color: #ffaaaa; }
-    .btn-emergency.active-emg { background: #600; border-color: #f44; }
-    .btn-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-
-    /* 速度スライダー */
-    .range-row { display: flex; gap: 8px; align-items: center; }
-    input[type=range] { flex: 1; accent-color: #5af; }
-    .range-val { font-size: 11px; color: #4cf; width: 20px; text-align: right; }
-
-    /* クレーン状態 */
-    #craneStatus { font-size: 12px; font-weight: bold; color: #4cf; margin-top: 4px; }
+    #btn-emergency:hover { background: #440000; border-color: #ff3333; color: #ffaaaa; }
+    #btn-emergency.active-emg { background: #660000; border-color: #ff4444; color: #ffcccc; }
 
     /* ── ステータスバー ── */
     #status-bar {
@@ -122,38 +33,26 @@
 
     /* ── ジョブキュー ── */
     #job-panel {
-      position: fixed; top: 16px; right: 16px;
-      width: 210px;
-      background: rgba(8,18,36,0.88);
-      border: 1px solid #1e4080; border-radius: 8px;
-      padding: 12px; backdrop-filter: blur(6px);
+      position: fixed; top: 16px; right: 16px; width: 210px;
+      background: rgba(8,18,36,0.88); border: 1px solid #1e4080;
+      border-radius: 8px; padding: 12px; backdrop-filter: blur(6px);
       z-index: 10; max-height: 500px; overflow-y: auto;
     }
     #job-panel h3 { font-size: 11px; color: #5af; letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase; }
-    .job-item {
-      font-size: 10px; padding: 5px 7px; margin-bottom: 3px;
-      border-radius: 3px; border-left: 3px solid #333;
-      line-height: 1.4;
-    }
+    .job-item { font-size: 10px; padding: 5px 7px; margin-bottom: 3px; border-radius: 3px; border-left: 3px solid #333; line-height: 1.4; }
     .job-item.running { border-color: #4f4; background: rgba(0,60,0,0.25); color: #8f8; }
     .job-item.queued  { border-color: #44a; background: rgba(0,0,40,0.3); color: #88c; }
     .job-item.done    { border-color: #222; color: #334; }
-    .job-tag {
-      display: inline-block; font-size: 9px; padding: 1px 4px;
-      border-radius: 2px; margin-right: 4px; font-weight: bold;
-    }
+    .job-tag { display: inline-block; font-size: 9px; padding: 1px 4px; border-radius: 2px; margin-right: 4px; font-weight: bold; }
     .tag-store    { background: #1a3a00; color: #8fcc44; border: 1px solid #4a8a00; }
     .tag-retrieve { background: #001a3a; color: #44aeff; border: 1px solid #004a8a; }
     .tag-relocate { background: #2a1a00; color: #ffaa44; border: 1px solid #7a4a00; }
 
     /* ── モータ監視パネル ── */
     #motor-panel {
-      position: fixed; bottom: 36px; right: 16px;
-      width: 230px;
-      background: rgba(4,12,28,0.92);
-      border: 1px solid #1e4080; border-radius: 8px;
-      padding: 10px 12px;
-      backdrop-filter: blur(6px); z-index: 10;
+      position: fixed; bottom: 36px; right: 16px; width: 230px;
+      background: rgba(4,12,28,0.92); border: 1px solid #1e4080;
+      border-radius: 8px; padding: 10px 12px; backdrop-filter: blur(6px); z-index: 10;
     }
     #motor-panel h3 { font-size: 10px; color: #5af; letter-spacing: 2px; margin-bottom: 8px; text-transform: uppercase; }
     .m-row { margin-bottom: 8px; }
@@ -170,18 +69,211 @@
     .m-val-label { color: #456; }
     .m-val-num   { color: #6cf; text-align: right; }
     .m-val-num.hi { color: #f84; }
+
+    /* ── 操作モーダル ── */
+    #op-modal {
+      position: fixed; inset: 0;
+      background: rgba(0,5,15,0.78); backdrop-filter: blur(6px);
+      display: none; align-items: center; justify-content: center; z-index: 30;
+    }
+    #op-modal.open { display: flex; }
+    #op-box {
+      position: relative;
+      background: rgba(4,14,30,0.97); border: 2px solid #00ccff;
+      border-radius: 10px; padding: 18px 20px;
+      width: 360px; max-height: 88vh; overflow-y: auto;
+      box-shadow: 0 0 50px rgba(0,180,255,0.22);
+    }
+    #op-box h2 {
+      font-size: 12px; color: #00ccff; letter-spacing: 3px;
+      text-transform: uppercase; text-align: center;
+      margin-bottom: 14px; border-bottom: 1px solid #0088aa; padding-bottom: 8px;
+    }
+    #modal-close {
+      position: absolute; top: 10px; right: 12px;
+      background: none; border: none; color: #446;
+      font-size: 18px; cursor: pointer; padding: 2px 6px;
+    }
+    #modal-close:hover { color: #aaf; background: none; }
+    .modal-sep { border: none; border-top: 1px solid #1a3a5a; margin: 10px 0; }
+
+    /* ステータスグリッド */
+    .status-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 2px;
+    }
+    .status-cell {
+      background: rgba(0,20,40,0.6); border: 1px solid #1a3a5a;
+      border-radius: 4px; padding: 5px 7px;
+    }
+    .status-cell .s-label { font-size: 9px; color: #567; text-transform: uppercase; letter-spacing: 1px; }
+    .status-cell .s-val   { font-size: 11px; font-weight: bold; color: #4cf; margin-top: 2px; }
+    #craneStatus  { font-size: 11px; font-weight: bold; color: #4cf; }
+    #sorterStatus { font-size: 11px; font-weight: bold; color: #fc8; }
+    #robotStatus  { font-size: 11px; font-weight: bold; color: #8f8; }
+
+    /* ポートカウント */
+    .port-grid {
+      display: grid; grid-template-columns: repeat(5,1fr); gap: 4px; margin-top: 4px;
+    }
+    .port-cell { text-align: center; background: rgba(0,20,40,0.5); border-radius: 3px; padding: 4px 2px; }
+
+    /* 速度 */
+    .range-row { display: flex; gap: 8px; align-items: center; }
+    input[type=range] { flex: 1; accent-color: #00ccff; }
+    .range-val { font-size: 11px; color: #4cf; width: 20px; text-align: right; }
+
+    /* ボタン共通 */
+    button { background: #0d2244; border: 1px solid #1e4080; color: #8bf; padding: 6px 10px; font-size: 11px; border-radius: 4px; cursor: pointer; transition: all 0.15s; font-family: inherit; }
+    button:hover { background: #1a3a6a; border-color: #5af; color: #fff; }
+    button:active { background: #2a5aaa; }
+    .btn-2col { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+    /* タブ */
+    .tabs { display: flex; gap: 4px; margin-bottom: 10px; }
+    .tab { flex: 1; padding: 5px 2px; font-size: 11px; background: #0d2244; border: 1px solid #1e4080; color: #668; border-radius: 4px; cursor: pointer; font-family: inherit; transition: all 0.15s; text-align: center; }
+    .tab.active { background: #0a4080; border-color: #00ccff; color: #5ff; font-weight: bold; }
+    .tab:hover:not(.active) { background: #1a3060; color: #aaf; }
+
+    /* フォーム */
+    .job-form { display: none; }
+    .job-form.visible { display: block; }
+    .form-row { display: flex; align-items: center; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+    .form-label { font-size: 10px; color: #789; min-width: 46px; }
+    .addr-inputs { display: flex; gap: 3px; align-items: center; flex: 1; }
+    select, input[type=number] { background: #0d2244; border: 1px solid #2a4a7a; color: #8bf; font-family: inherit; font-size: 12px; border-radius: 3px; padding: 3px 5px; }
+    select { cursor: pointer; }
+    select.side-sel { width: 46px; }
+    input[type=number] { width: 42px; }
+    select:focus, input:focus { border-color: #00ccff; outline: none; color: #fff; }
+    .station-badge { display: inline-flex; align-items: center; justify-content: center; padding: 3px 8px; border-radius: 3px; font-size: 11px; font-weight: bold; }
+    .st1 { background: #2a1e00; border: 1px solid #d4a017; color: #f0c040; }
+    .st2 { background: #001a0a; border: 1px solid #1a8a3a; color: #40f080; }
+    .btn-exec { width: 100%; margin-top: 8px; background: #0a3a60; border-color: #0088aa; color: #6df; font-size: 12px; padding: 8px; }
+    .btn-exec:hover { background: #1a5a80; border-color: #00ccff; color: #fff; }
+
+    /* セクションタイトル */
+    .sec { font-size: 10px; color: #678; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
   </style>
 </head>
 <body>
   <div id="canvas-container"></div>
 
-  <!-- 左パネル -->
-  <div id="panel">
-    <h2>倉庫制御パネル</h2>
+  <!-- 非常停止 (常時表示) -->
+  <button id="btn-emergency">⚠ 非常停止 [E]</button>
 
-    <!-- ジョブ種別タブ -->
-    <div class="section">
-      <div class="section-title">ジョブ種別</div>
+  <!-- ジョブキュー -->
+  <div id="job-panel">
+    <h3>ジョブキュー</h3>
+    <div id="job-items"></div>
+  </div>
+
+  <!-- モータ監視パネル -->
+  <div id="motor-panel">
+    <h3>モータ監視</h3>
+    <div class="m-row">
+      <div class="m-name">走行モータ <span>11kW / 4P</span></div>
+      <div class="m-bar-bg"><div class="m-bar bar-travel" id="bar-travel" style="width:0%"></div></div>
+      <div class="m-vals">
+        <span class="m-val-label">回転数</span><span class="m-val-num" id="mt-rpm">0 rpm</span>
+        <span class="m-val-label">トルク</span><span class="m-val-num" id="mt-trq">0 %</span>
+        <span class="m-val-label">電流</span><span class="m-val-num" id="mt-cur">0.0 A</span>
+        <span class="m-val-label">周波数</span><span class="m-val-num" id="mt-freq">0.0 Hz</span>
+      </div>
+    </div>
+    <div class="m-row">
+      <div class="m-name">昇降モータ <span>7.5kW / 4P</span></div>
+      <div class="m-bar-bg"><div class="m-bar bar-lift" id="bar-lift" style="width:0%"></div></div>
+      <div class="m-vals">
+        <span class="m-val-label">回転数</span><span class="m-val-num" id="ml-rpm">0 rpm</span>
+        <span class="m-val-label">トルク</span><span class="m-val-num" id="ml-trq">0 %</span>
+        <span class="m-val-label">電流</span><span class="m-val-num" id="ml-cur">0.0 A</span>
+        <span class="m-val-label">周波数</span><span class="m-val-num" id="ml-freq">0.0 Hz</span>
+      </div>
+    </div>
+    <div class="m-row">
+      <div class="m-name">フォークモータ <span>1.5kW / 4P</span></div>
+      <div class="m-bar-bg"><div class="m-bar bar-fork" id="bar-fork" style="width:0%"></div></div>
+      <div class="m-vals">
+        <span class="m-val-label">回転数</span><span class="m-val-num" id="mf-rpm">0 rpm</span>
+        <span class="m-val-label">トルク</span><span class="m-val-num" id="mf-trq">0 %</span>
+        <span class="m-val-label">電流</span><span class="m-val-num" id="mf-cur">0.0 A</span>
+        <span class="m-val-label">周波数</span><span class="m-val-num" id="mf-freq">0.0 Hz</span>
+      </div>
+    </div>
+    <div class="m-row">
+      <div class="m-name">ソーターモータ <span>2.2kW / 4P</span></div>
+      <div class="m-bar-bg"><div class="m-bar bar-sorter" id="bar-sorter" style="width:0%"></div></div>
+      <div class="m-vals">
+        <span class="m-val-label">回転数</span><span class="m-val-num" id="ms-rpm">0 rpm</span>
+        <span class="m-val-label">トルク</span><span class="m-val-num" id="ms-trq">0 %</span>
+        <span class="m-val-label">電流</span><span class="m-val-num" id="ms-cur">0.0 A</span>
+        <span class="m-val-label">周波数</span><span class="m-val-num" id="ms-freq">0.0 Hz</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ステータスバー -->
+  <div id="status-bar">
+    <div class="stat"><span class="stat-label">走行:</span><span class="stat-val" id="sb-x">0.00 m</span></div>
+    <div class="stat"><span class="stat-label">昇降:</span><span class="stat-val" id="sb-y">0.00 m</span></div>
+    <div class="stat"><span class="stat-label">フォーク:</span><span class="stat-val" id="sb-fork">0.00 m</span></div>
+    <div class="stat"><span class="stat-label">速度:</span><span class="stat-val" id="sb-speed">0.00 m/s</span></div>
+    <div class="stat"><span class="stat-label">荷重:</span><span class="stat-val" id="sb-load">なし</span></div>
+    <div class="stat"><span class="stat-label">FPS:</span><span class="stat-val" id="sb-fps">0</span></div>
+  </div>
+
+  <!-- ── 操作モーダル (3D 制御端末クリックで表示) ── -->
+  <div id="op-modal">
+    <div id="op-box">
+      <button id="modal-close">✕</button>
+      <h2>WAREHOUSE TERMINAL</h2>
+
+      <!-- システム状態 -->
+      <div class="sec">システム状態</div>
+      <div class="status-grid">
+        <div class="status-cell">
+          <div class="s-label">クレーン</div>
+          <div id="craneStatus" class="s-val">待機中</div>
+        </div>
+        <div class="status-cell">
+          <div class="s-label">ソーター</div>
+          <div id="sorterStatus" class="s-val" style="color:#fc8">仕分待機</div>
+        </div>
+        <div class="status-cell" style="grid-column:span 2">
+          <div class="s-label">ロボット</div>
+          <div id="robotStatus" class="s-val" style="color:#8f8">ロボット待機</div>
+        </div>
+      </div>
+
+      <!-- ポート蓄積数 -->
+      <div class="sec" style="margin-top:10px">ポート蓄積数</div>
+      <div class="port-grid">
+        <div class="port-cell"><span style="font-size:9px;color:#f66">A</span><br><span id="port-count-A" style="font-size:13px;font-weight:bold;color:#f66">0</span></div>
+        <div class="port-cell"><span style="font-size:9px;color:#4c4">B</span><br><span id="port-count-B" style="font-size:13px;font-weight:bold;color:#4c4">0</span></div>
+        <div class="port-cell"><span style="font-size:9px;color:#48f">C</span><br><span id="port-count-C" style="font-size:13px;font-weight:bold;color:#48f">0</span></div>
+        <div class="port-cell"><span style="font-size:9px;color:#fa0">D</span><br><span id="port-count-D" style="font-size:13px;font-weight:bold;color:#fa0">0</span></div>
+        <div class="port-cell"><span style="font-size:9px;color:#c4f">E</span><br><span id="port-count-E" style="font-size:13px;font-weight:bold;color:#c4f">0</span></div>
+      </div>
+
+      <hr class="modal-sep">
+
+      <!-- モータ速度 + 視点 -->
+      <div class="sec">モータ速度</div>
+      <div class="range-row" style="margin-bottom:10px">
+        <input type="range" id="speed-slider" min="1" max="10" value="5">
+        <span class="range-val" id="speed-val">5</span>
+      </div>
+      <div class="sec">視点切替</div>
+      <div class="btn-2col" style="margin-bottom:4px">
+        <button id="btn-view-crane"  style="font-size:10px">倉庫</button>
+        <button id="btn-view-sorter" style="font-size:10px">ソーター</button>
+      </div>
+      <button id="btn-view-robot" style="font-size:10px;width:100%">ロボット</button>
+
+      <hr class="modal-sep">
+
+      <!-- ジョブ操作 -->
+      <div class="sec">ジョブ種別</div>
       <div class="tabs">
         <button class="tab active" data-job="store">入庫</button>
         <button class="tab"        data-job="retrieve">出庫</button>
@@ -205,7 +297,7 @@
               <option value="1">R 右</option>
             </select>
             <input type="number" id="store-bay"   min="1" max="20" value="1" title="間口 1〜20">
-            <input type="number" id="store-level" min="1" max="6"  value="1" title="段 1〜6">
+            <input type="number" id="store-level" min="1" max="10" value="1" title="段 1〜10">
           </div>
         </div>
         <div style="font-size:10px;color:#456;margin-bottom:6px;padding-left:52px">例: L-1-1 = 左ラック,間口1,1段目</div>
@@ -255,8 +347,8 @@
               <option value="-1">L 左</option>
               <option value="1">R 右</option>
             </select>
-            <input type="number" id="rel-src-bay"   min="1" max="10" value="1">
-            <input type="number" id="rel-src-level" min="1" max="6"  value="1">
+            <input type="number" id="rel-src-bay"   min="1" max="20" value="1">
+            <input type="number" id="rel-src-level" min="1" max="10" value="1">
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:6px;margin:4px 0;color:#456;font-size:18px;">
@@ -269,18 +361,18 @@
               <option value="-1">L 左</option>
               <option value="1">R 右</option>
             </select>
-            <input type="number" id="rel-dst-bay"   min="1" max="10" value="2">
-            <input type="number" id="rel-dst-level" min="1" max="6"  value="1">
+            <input type="number" id="rel-dst-bay"   min="1" max="20" value="2">
+            <input type="number" id="rel-dst-level" min="1" max="10" value="1">
           </div>
         </div>
         <button class="btn-exec" id="btn-exec-relocate">移動実行</button>
       </div>
-    </div>
 
-    <!-- 手動操作 -->
-    <div class="section">
-      <div class="section-title">手動操作</div>
-      <div class="btn-2col">
+      <hr class="modal-sep">
+
+      <!-- 手動操作 -->
+      <div class="sec">手動操作 (フォーク)</div>
+      <div class="btn-2col" style="margin-top:6px">
         <button id="btn-fork-left">フォーク 左</button>
         <button id="btn-fork-right">フォーク 右</button>
       </div>
@@ -288,106 +380,6 @@
         <button id="btn-fork-center" style="width:100%">フォーク 収納</button>
       </div>
     </div>
-
-    <!-- 速度 -->
-    <div class="section">
-      <div class="section-title">モータ速度</div>
-      <div class="range-row">
-        <input type="range" id="speed-slider" min="1" max="10" value="5">
-        <span class="range-val" id="speed-val">5</span>
-      </div>
-    </div>
-
-    <!-- 非常停止 -->
-    <button class="btn-emergency" id="btn-emergency">⚠ 非常停止 [E]</button>
-
-    <!-- 状態 -->
-    <div class="section-title" style="margin-top:10px">クレーン状態</div>
-    <div id="craneStatus">待機中</div>
-    <div class="section-title" style="margin-top:8px">ソーター状態</div>
-    <div id="sorterStatus" style="font-size:11px;color:#fc8;font-weight:bold">仕分待機</div>
-
-    <!-- ソーターポート -->
-    <div class="section-title" style="margin-top:8px">ポート蓄積数</div>
-    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:3px;margin-top:4px">
-      <div style="text-align:center;font-size:9px;color:#f66">A<br><span id="port-count-A" style="font-size:12px;font-weight:bold;color:#f66">0</span></div>
-      <div style="text-align:center;font-size:9px;color:#4c4">B<br><span id="port-count-B" style="font-size:12px;font-weight:bold;color:#4c4">0</span></div>
-      <div style="text-align:center;font-size:9px;color:#48f">C<br><span id="port-count-C" style="font-size:12px;font-weight:bold;color:#48f">0</span></div>
-      <div style="text-align:center;font-size:9px;color:#fa0">D<br><span id="port-count-D" style="font-size:12px;font-weight:bold;color:#fa0">0</span></div>
-      <div style="text-align:center;font-size:9px;color:#c4f">E<br><span id="port-count-E" style="font-size:12px;font-weight:bold;color:#c4f">0</span></div>
-    </div>
-
-    <!-- 視点切替 -->
-    <div class="section-title" style="margin-top:10px">視点</div>
-    <div class="btn-2col" style="margin-top:4px">
-      <button id="btn-view-crane" style="font-size:10px">倉庫</button>
-      <button id="btn-view-sorter" style="font-size:10px">ソーター</button>
-    </div>
-  </div>
-
-  <!-- ジョブキュー -->
-  <div id="job-panel">
-    <h3>ジョブキュー</h3>
-    <div id="job-items"></div>
-  </div>
-
-  <!-- モータ監視パネル -->
-  <div id="motor-panel">
-    <h3>モータ監視</h3>
-
-    <div class="m-row">
-      <div class="m-name">走行モータ <span>11kW / 4P</span></div>
-      <div class="m-bar-bg"><div class="m-bar bar-travel" id="bar-travel" style="width:0%"></div></div>
-      <div class="m-vals">
-        <span class="m-val-label">回転数</span><span class="m-val-num" id="mt-rpm">0 rpm</span>
-        <span class="m-val-label">トルク</span><span class="m-val-num" id="mt-trq">0 %</span>
-        <span class="m-val-label">電流</span><span class="m-val-num" id="mt-cur">0.0 A</span>
-        <span class="m-val-label">周波数</span><span class="m-val-num" id="mt-freq">0.0 Hz</span>
-      </div>
-    </div>
-
-    <div class="m-row">
-      <div class="m-name">昇降モータ <span>7.5kW / 4P</span></div>
-      <div class="m-bar-bg"><div class="m-bar bar-lift" id="bar-lift" style="width:0%"></div></div>
-      <div class="m-vals">
-        <span class="m-val-label">回転数</span><span class="m-val-num" id="ml-rpm">0 rpm</span>
-        <span class="m-val-label">トルク</span><span class="m-val-num" id="ml-trq">0 %</span>
-        <span class="m-val-label">電流</span><span class="m-val-num" id="ml-cur">0.0 A</span>
-        <span class="m-val-label">周波数</span><span class="m-val-num" id="ml-freq">0.0 Hz</span>
-      </div>
-    </div>
-
-    <div class="m-row">
-      <div class="m-name">フォークモータ <span>1.5kW / 4P</span></div>
-      <div class="m-bar-bg"><div class="m-bar bar-fork" id="bar-fork" style="width:0%"></div></div>
-      <div class="m-vals">
-        <span class="m-val-label">回転数</span><span class="m-val-num" id="mf-rpm">0 rpm</span>
-        <span class="m-val-label">トルク</span><span class="m-val-num" id="mf-trq">0 %</span>
-        <span class="m-val-label">電流</span><span class="m-val-num" id="mf-cur">0.0 A</span>
-        <span class="m-val-label">周波数</span><span class="m-val-num" id="mf-freq">0.0 Hz</span>
-      </div>
-    </div>
-
-    <div class="m-row">
-      <div class="m-name">ソーターモータ <span>2.2kW / 4P</span></div>
-      <div class="m-bar-bg"><div class="m-bar bar-sorter" id="bar-sorter" style="width:0%"></div></div>
-      <div class="m-vals">
-        <span class="m-val-label">回転数</span><span class="m-val-num" id="ms-rpm">0 rpm</span>
-        <span class="m-val-label">トルク</span><span class="m-val-num" id="ms-trq">0 %</span>
-        <span class="m-val-label">電流</span><span class="m-val-num" id="ms-cur">0.0 A</span>
-        <span class="m-val-label">周波数</span><span class="m-val-num" id="ms-freq">0.0 Hz</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- ステータスバー -->
-  <div id="status-bar">
-    <div class="stat"><span class="stat-label">走行:</span><span class="stat-val" id="sb-x">0.00 m</span></div>
-    <div class="stat"><span class="stat-label">昇降:</span><span class="stat-val" id="sb-y">0.00 m</span></div>
-    <div class="stat"><span class="stat-label">フォーク:</span><span class="stat-val" id="sb-fork">0.00 m</span></div>
-    <div class="stat"><span class="stat-label">速度:</span><span class="stat-val" id="sb-speed">0.00 m/s</span></div>
-    <div class="stat"><span class="stat-label">荷重:</span><span class="stat-val" id="sb-load">なし</span></div>
-    <div class="stat"><span class="stat-label">FPS:</span><span class="stat-val" id="sb-fps">0</span></div>
   </div>
 
   <script type="module" src="/src/main.js"></script>
