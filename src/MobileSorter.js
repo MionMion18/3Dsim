@@ -4,7 +4,7 @@ import { InverterMotor } from './InverterMotor.js';
 export const SORTER_CONFIG = {
   inputX:     0.7,   // ST2 入力点 X (rack bay-0 位置に合わせた)
   endX:      -11.5,  // コンベア終端 X
-  z:          1.5,   // ST2 と同じ Z
+  z:          3.5,   // ST2(z=1.5)の手前(+Z側)に配置し、連結コンベアで接続
   y:          1.2,   // コンベア上面高さ (ST2 と同じ高架レベル)
   convWidth:  0.95,  // フレーム Z 幅
   portLabels: ['A', 'B', 'C', 'D', 'E'],
@@ -37,8 +37,9 @@ export class MobileSorter {
     this.cartMotor.position = SC.inputX;
     this.cartMotor.target   = SC.inputX;
 
-    this.load     = null;
-    this._rollers = []; // アニメーション用ローラーグループ配列
+    this.load         = null;
+    this._rollers     = []; // メインコンベアローラー
+    this._cartRollers = []; // カート上面ローラー
 
     this.ports = SC.portLabels.map((label, i) => ({
       label, index: i,
@@ -169,28 +170,63 @@ export class MobileSorter {
         new THREE.Vector3(port.x, SC.y + 0.9, SHUTE_Z0 + SC.portZDepth + 0.1));
     });
 
-    // ── ソーターカート (オレンジ台車) ──
+    // ── ソーターカート (Toyota Mobile Sorter 風) ──
     this.cartGroup = new THREE.Group();
     this.rootGroup.add(this.cartGroup);
 
-    this.cartBody = new THREE.Mesh(
-      new THREE.BoxGeometry(0.58, 0.16, 0.90), this._mat(0xff6600, 0.7, 0.3)
-    );
+    const cWhite   = this._mat(0xf2f2f2, 0.12, 0.40);
+    const cDark    = this._mat(0x181820, 0.88, 0.20);
+    const cRail    = this._mat(0x2a2a2a, 0.90, 0.15);
+    const cStripeR = this._mat(0xdd2200, 0.15, 0.65);
+    const cStripeB = this._mat(0x111111, 0.40, 0.55);
+    const cRoller  = this._mat(0x223344, 0.70, 0.30);
+
+    // 下部ダーク台座
+    const base = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.10, 1.05), cDark);
+    base.position.set(0, -0.10, 0);
+    base.castShadow = true;
+    this.cartGroup.add(base);
+
+    // 白いメインボディ
+    this.cartBody = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.13, 1.05), cWhite);
     this.cartBody.castShadow = true;
     this.cartGroup.add(this.cartBody);
 
-    const cwMat = this._mat(0x1a1a1a, 0.9, 0.1);
-    [[-0.38, -0.40], [-0.38, 0.40], [0.38, -0.40], [0.38, 0.40]].forEach(([xo, zo]) => {
-      const w = new THREE.Mesh(
-        new THREE.CylinderGeometry(0.06, 0.06, 0.05, 12), cwMat
-      );
-      w.rotation.x = Math.PI / 2;
-      w.position.set(xo, -0.10, zo);
-      this.cartGroup.add(w);
+    // 側面ストライプ（赤 + 黒）×前後2面
+    [-0.525, 0.525].forEach(zo => {
+      const sr = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.024, 0.018), cStripeR);
+      sr.position.set(0, -0.022, zo);
+      this.cartGroup.add(sr);
+      const sb = new THREE.Mesh(new THREE.BoxGeometry(0.72, 0.015, 0.018), cStripeB);
+      sb.position.set(0, -0.044, zo);
+      this.cartGroup.add(sb);
     });
 
-    const cLight = new THREE.PointLight(0xff8833, 0.6, 3);
-    cLight.position.set(0, 0.15, 0);
+    // 上面ローラー群（軸 X 方向、Z 方向に9本配列）
+    const cRollerGeo = new THREE.CylinderGeometry(0.026, 0.026, 0.66, 8);
+    const rollerN = 9;
+    for (let i = 0; i < rollerN; i++) {
+      const rg = new THREE.Group();
+      rg.position.set(0, 0.082, -0.44 + i * (0.88 / (rollerN - 1)));
+      const r = new THREE.Mesh(cRollerGeo, cRoller);
+      r.rotation.z = Math.PI / 2;
+      rg.add(r);
+      this.cartGroup.add(rg);
+      this._cartRollers.push(rg);
+    }
+
+    // レールガイドフランジ（前後底面）
+    [-0.34, 0.34].forEach(zo => {
+      const fl = new THREE.Mesh(new THREE.BoxGeometry(0.80, 0.055, 0.075), cRail);
+      fl.position.set(0, -0.178, zo);
+      this.cartGroup.add(fl);
+    });
+
+    // ラベルスプライト（前面）
+    this._addCartLabel();
+
+    const cLight = new THREE.PointLight(0xaaddff, 0.35, 3);
+    cLight.position.set(0, 0.20, 0);
     this.cartGroup.add(cLight);
 
   }
@@ -214,6 +250,35 @@ export class MobileSorter {
     sprite.scale.set(0.55, 0.28, 1);
     sprite.position.copy(pos);
     this.rootGroup.add(sprite);
+  }
+
+  _addCartLabel() {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256; canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.fillStyle = '#f2f2f2';
+    ctx.fillRect(0, 0, 256, 64);
+    ctx.fillStyle = '#dd2200';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText('TOYOTA', 10, 24);
+    ctx.fillStyle = '#222222';
+    ctx.font = 'bold 13px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.fillText('Mobile Sorter', 246, 48);
+    ctx.strokeStyle = '#dd2200';
+    ctx.lineWidth = 3;
+    ctx.beginPath(); ctx.moveTo(0, 34); ctx.lineTo(256, 34); ctx.stroke();
+    ctx.strokeStyle = '#111111';
+    ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(0, 40); ctx.lineTo(256, 40); ctx.stroke();
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(canvas), transparent: true,
+    }));
+    sprite.scale.set(0.55, 0.14, 1);
+    sprite.position.set(0, 0.01, -0.54);
+    this.cartGroup.add(sprite);
   }
 
   // ── 制御 ──────────────────────────────────────────────────
@@ -261,9 +326,13 @@ export class MobileSorter {
     this.cartMotor.step(dt);
     this._syncCart();
 
-    // ローラースピンアニメーション (カート速度に連動)
-    const omega = this.cartMotor.velocity / 0.038; // rad/s
+    // メインコンベアローラースピン
+    const omega = this.cartMotor.velocity / 0.038;
     for (const rg of this._rollers) rg.rotation.x += omega * dt;
+
+    // カート上面ローラースピン（走行速度に連動）
+    const cartOmega = this.cartMotor.velocity / 0.026;
+    for (const rg of this._cartRollers) rg.rotation.x += cartOmega * dt;
 
     if (this.load) {
       this.load.position.set(this.cartMotor.position, SC.y + 0.28, SC.z);

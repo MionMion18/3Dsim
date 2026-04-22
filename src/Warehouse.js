@@ -143,44 +143,47 @@ export class Warehouse {
       const color = isST1 ? 0xd4a017 : 0x1a8a3a;
       const top   = st.y; // プラットフォーム上面高さ
 
-      // ── 支持柱 (4隅、床から top まで) ──
-      const colMat = this._mat(0x3a5070, 0.8, 0.3);
-      [[-0.38, -0.38], [-0.38, 0.38], [0.38, -0.38], [0.38, 0.38]].forEach(([dx, dz]) => {
-        const col = new THREE.Mesh(
-          new THREE.BoxGeometry(0.07, top, 0.07),
-          colMat
-        );
-        col.position.set(st.x + dx, top / 2, z + dz * C.depth * 0.44);
-        col.castShadow = true;
-        this.scene.add(col);
-      });
-
-      // ── プラットフォーム本体 ──
-      const platMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.9, 0.15, C.depth * 0.9),
-        this._mat(color, 0.3, 0.7)
-      );
-      platMesh.position.set(st.x, top - 0.075, z);
-      platMesh.receiveShadow = true;
-      this.scene.add(platMesh);
-
-      // ── 安全柵 ──
-      const railMat = this._mat(0xffcc00, 0.5, 0.5);
-      [0.08, 0.18].forEach(ry => {
-        [-C.depth * 0.44, C.depth * 0.44].forEach(dz => {
-          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.03), railMat);
-          rail.position.set(st.x, top + ry, z + dz);
-          this.scene.add(rail);
+      // ST2 はコンベア連結のためプラットフォーム視覚を描画しない
+      if (isST1) {
+        // ── 支持柱 (4隅、床から top まで) ──
+        const colMat = this._mat(0x3a5070, 0.8, 0.3);
+        [[-0.38, -0.38], [-0.38, 0.38], [0.38, -0.38], [0.38, 0.38]].forEach(([dx, dz]) => {
+          const col = new THREE.Mesh(
+            new THREE.BoxGeometry(0.07, top, 0.07),
+            colMat
+          );
+          col.position.set(st.x + dx, top / 2, z + dz * C.depth * 0.44);
+          col.castShadow = true;
+          this.scene.add(col);
         });
-      });
 
-      // ── ストライプ（安全ライン）──
-      const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
-      [-0.35, 0, 0.35].forEach(zOff => {
-        const s = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.01, 0.05), stripeMat);
-        s.position.set(st.x, top, z + zOff);
-        this.scene.add(s);
-      });
+        // ── プラットフォーム本体 ──
+        const platMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.9, 0.15, C.depth * 0.9),
+          this._mat(color, 0.3, 0.7)
+        );
+        platMesh.position.set(st.x, top - 0.075, z);
+        platMesh.receiveShadow = true;
+        this.scene.add(platMesh);
+
+        // ── 安全柵 ──
+        const railMat = this._mat(0xffcc00, 0.5, 0.5);
+        [0.08, 0.18].forEach(ry => {
+          [-C.depth * 0.44, C.depth * 0.44].forEach(dz => {
+            const rail = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.03), railMat);
+            rail.position.set(st.x, top + ry, z + dz);
+            this.scene.add(rail);
+          });
+        });
+
+        // ── ストライプ（安全ライン）──
+        const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
+        [-0.35, 0, 0.35].forEach(zOff => {
+          const s = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.01, 0.05), stripeMat);
+          s.position.set(st.x, top, z + zOff);
+          this.scene.add(s);
+        });
+      }
 
       // ── ポイントライト ──
       const light = new THREE.PointLight(isST1 ? 0xffcc44 : 0x44ff88, 0.8, 3);

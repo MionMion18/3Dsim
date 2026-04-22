@@ -68,7 +68,19 @@ const scheduler   = new JobScheduler();
 const sorter      = new MobileSorter(scene);
 const sorterCtrl  = new SorterController(sorter);
 const autoCtrl    = new AutoController(crane, warehouse, loadManager, scheduler, sorterCtrl);
-const robot        = new HumanoidRobot(scene);
+// 10体のロボット: 2列×5 (z=6.5 / z=8.5, x=-10〜-2 間隔2m)
+const ROBOT_POSITIONS = [
+  [-10, 6.5], [-8, 6.5], [-6, 6.5], [-4, 6.5], [-2, 6.5],
+  [-10, 8.5], [-8, 8.5], [-6, 8.5], [-4, 8.5], [-2, 8.5],
+];
+const robots = ROBOT_POSITIONS.map(([x, z]) =>
+  new HumanoidRobot(
+    scene,
+    new THREE.Vector3(x, 0, z),
+    new THREE.Vector3(x + 2.5, 0, z + 0.2)
+  )
+);
+const robot = robots[0]; // 既存コード互換用
 const controlPanel = new ControlPanel3D(scene);
 const st1Conv      = new StationConveyor(scene, {
   startX: -4.0,
@@ -76,6 +88,137 @@ const st1Conv      = new StationConveyor(scene, {
   z:      stationWorldZ(STATIONS.ST1.side),
   y:      STATIONS.ST1.y,
 });
+// ST2 (R-1-1, z=1.5) → MobileSorter (手前 z=3.5) を Z 方向で連結する出庫コンベア
+const st2Conv      = new StationConveyor(scene, {
+  startZ: stationWorldZ(STATIONS.ST2.side),
+  endZ:   SORTER_CONFIG.z,
+  x:      STATIONS.ST2.x,
+  y:      STATIONS.ST2.y,
+});
+
+// ST2 プラットフォーム基台（台にローラーがついたコンベア）
+{
+  const stZ     = stationWorldZ(STATIONS.ST2.side);   // 1.5
+  const zEnd    = SORTER_CONFIG.z;                    // 3.5
+  const length  = zEnd - stZ;                         // 2.0
+  const platW   = 1.20;
+  const platH   = STATIONS.ST2.y - 0.08;              // ローラー下端まで ~1.12
+  const cx      = STATIONS.ST2.x;
+  const cz      = (stZ + zEnd) / 2;
+
+  // 床パッチ（台の下に薄い黒フロア、見切り用）
+  const pad = new THREE.Mesh(
+    new THREE.BoxGeometry(platW + 0.4, 0.10, length + 1.0),
+    new THREE.MeshStandardMaterial({ color: 0x1e2c38, roughness: 0.9, metalness: 0.1 })
+  );
+  pad.position.set(cx, -0.05, cz);
+  pad.receiveShadow = true;
+  scene.add(pad);
+
+  // メイン台座（緑、出庫STカラー）
+  const plat = new THREE.Mesh(
+    new THREE.BoxGeometry(platW, platH, length),
+    new THREE.MeshStandardMaterial({ color: 0x1a8a3a, metalness: 0.3, roughness: 0.7 })
+  );
+  plat.position.set(cx, platH / 2, cz);
+  plat.castShadow = true;
+  plat.receiveShadow = true;
+  scene.add(plat);
+
+  // 側面上部の黄色安全ストライプ（両側面）
+  [-platW / 2 - 0.002, platW / 2 + 0.002].forEach(dx => {
+    const s = new THREE.Mesh(
+      new THREE.BoxGeometry(0.010, 0.09, length - 0.06),
+      new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+    );
+    s.position.set(cx + dx, platH - 0.18, cz);
+    scene.add(s);
+  });
+
+  // 四隅の黒コーナーガード
+  const cornerMat = new THREE.MeshStandardMaterial({ color: 0x1a1a1a, metalness: 0.5, roughness: 0.4 });
+  [[-platW / 2, stZ], [platW / 2, stZ], [-platW / 2, zEnd], [platW / 2, zEnd]].forEach(([dx, ccz]) => {
+    const c = new THREE.Mesh(
+      new THREE.BoxGeometry(0.07, platH + 0.04, 0.07), cornerMat
+    );
+    c.position.set(cx + dx, (platH + 0.04) / 2, ccz);
+    c.castShadow = true;
+    scene.add(c);
+  });
+
+  // 前面銘板 "ST2" (ST側 = z=1.5 面)
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 128;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = '#0a3a1a';
+    ctx.fillRect(0, 0, 256, 128);
+    ctx.strokeStyle = '#ffcc00';
+    ctx.lineWidth = 4;
+    ctx.strokeRect(4, 4, 248, 120);
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 56px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ST2', 128, 50);
+    ctx.font = 'bold 18px monospace';
+    ctx.fillText('OUTBOUND', 128, 94);
+    const plate = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.8, 0.4),
+      new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(canvas), transparent: true })
+    );
+    plate.position.set(cx, platH - 0.45, stZ - 0.001);
+    plate.rotation.y = Math.PI; // ST 側を向く
+    scene.add(plate);
+  }
+}
+
+// ST2 ↔ モビルソータ 境界マーカー
+{
+  const boundZ = SORTER_CONFIG.z;
+  const boundX = STATIONS.ST2.x;
+
+  // 床の黄色安全ストライプ（境界ライン）
+  const gStripe = new THREE.Mesh(
+    new THREE.PlaneGeometry(1.30, 0.18),
+    new THREE.MeshBasicMaterial({ color: 0xffcc00 })
+  );
+  gStripe.rotation.x = -Math.PI / 2;
+  gStripe.position.set(boundX, 0.015, boundZ);
+  scene.add(gStripe);
+
+  // 境界ラベル "ST2 ▶ SORTER"
+  const canvas = document.createElement('canvas');
+  canvas.width = 256; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  if (ctx) {
+    ctx.fillStyle = 'rgba(0,0,0,0.88)';
+    ctx.fillRect(0, 0, 256, 64);
+    ctx.strokeStyle = '#ffcc00';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(2, 2, 252, 60);
+    ctx.fillStyle = '#ffcc00';
+    ctx.font = 'bold 22px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('ST2 ▶ SORTER', 128, 32);
+    const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
+      map: new THREE.CanvasTexture(canvas), transparent: true,
+    }));
+    sprite.scale.set(1.1, 0.27, 1);
+    sprite.position.set(boundX, 2.05, boundZ);
+    scene.add(sprite);
+  }
+
+  // 引き渡しゾーンマット（ST2コンベア天面に重ねる、黄色半透明）
+  const handoff = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.75, 0.20),
+    new THREE.MeshBasicMaterial({ color: 0xffcc00, transparent: true, opacity: 0.35 })
+  );
+  handoff.rotation.x = -Math.PI / 2;
+  handoff.position.set(boundX, STATIONS.ST2.y + 0.005, boundZ);
+  scene.add(handoff);
+}
 
 // ── モーダル制御 ───────────────────────────────────────────
 const opModal = document.getElementById('op-modal');
@@ -103,6 +246,11 @@ sorterCtrl.onPortComplete = (label, pallet) => {
   const idx  = sorter.getPortIndex(label);
   const port = sorter.ports[idx];
   robot.assignPickup(pallet, new THREE.Vector3(port.x, 0, _PORT_TGT_Z));
+};
+
+// ST2 → コンベア → ソーター のハンドオフ
+autoCtrl.onST2Handoff = (pallet, portLabel) => {
+  st2Conv.transport(pallet, (m) => sorterCtrl.addSortJob(m, portLabel));
 };
 
 // ポート未指定で ST2 に置かれたパレットもロボットが回収
@@ -282,7 +430,8 @@ function animate() {
   sorter.step(dt);
   sorterCtrl.update(dt);
   st1Conv.step(dt);
-  robot.update(dt);
+  st2Conv.step(dt);
+  for (const r of robots) r.update(dt);
   controlPanel.update(dt);
 
   // UI ステータス更新
