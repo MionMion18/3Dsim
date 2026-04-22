@@ -5,7 +5,7 @@ export const SORTER_CONFIG = {
   inputX:     0.7,   // ST2 入力点 X (rack bay-0 位置に合わせた)
   endX:      -11.5,  // コンベア終端 X
   z:          1.5,   // ST2 と同じ Z
-  y:          0.26,  // コンベア上面高さ
+  y:          1.2,   // コンベア上面高さ (ST2 と同じ高架レベル)
   convWidth:  0.95,  // フレーム Z 幅
   portLabels: ['A', 'B', 'C', 'D', 'E'],
   portColors: [0xff3333, 0x33cc33, 0x3399ff, 0xffaa00, 0xcc44ff],
@@ -107,43 +107,61 @@ export class MobileSorter {
       this.rootGroup.add(rail);
     });
 
+    // ── 高架支持脚 (2m ピッチ × 両側) ──
+    const legMat   = this._mat(0x3a5070, 0.8, 0.3);
+    const legCount = 7;
+    for (let i = 0; i <= legCount; i++) {
+      const lx = SC.inputX - i * (convLen / legCount);
+      [SC.z - SC.convWidth / 2 - 0.08, SC.z + SC.convWidth / 2 + 0.08].forEach(lz => {
+        const leg = new THREE.Mesh(new THREE.BoxGeometry(0.10, SC.y, 0.10), legMat);
+        leg.position.set(lx, SC.y / 2, lz);
+        leg.castShadow = true;
+        this.rootGroup.add(leg);
+      });
+    }
+
     // ── 各ポート ──
+    const shuteLen   = Math.sqrt(SC.portZDepth * SC.portZDepth + SC.y * SC.y);
+    const shuteAngle = Math.atan2(SC.y, SC.portZDepth); // 傾斜角 (高架→地面)
+
     this.ports.forEach(port => {
       const color = SC.portColors[port.index];
       const hex   = '#' + color.toString(16).padStart(6, '0');
 
-      // シュートフレーム
+      // 傾斜シュートフレーム (SC.y → 地面)
       const shMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.70, 0.08, SC.portZDepth),
+        new THREE.BoxGeometry(0.70, 0.08, shuteLen),
         this._mat(color, 0.3, 0.7)
       );
-      shMesh.position.set(port.x, SC.y - 0.04, SHUTE_Z0 + SC.portZDepth / 2);
+      shMesh.position.set(port.x, SC.y / 2, SHUTE_Z0 + SC.portZDepth / 2);
+      shMesh.rotation.x = shuteAngle;
       shMesh.castShadow = true;
       this.rootGroup.add(shMesh);
 
-      // シュート両サイドガイド
+      // 傾斜サイドガイド
       const sgMat = this._mat(color, 0.5, 0.5);
       [-0.35, 0.35].forEach(xo => {
-        const sg = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, SC.portZDepth), sgMat);
-        sg.position.set(port.x + xo, SC.y + 0.05, SHUTE_Z0 + SC.portZDepth / 2);
+        const sg = new THREE.Mesh(new THREE.BoxGeometry(0.04, SC.y * 0.9, shuteLen), sgMat);
+        sg.position.set(port.x + xo, SC.y / 2, SHUTE_Z0 + SC.portZDepth / 2);
+        sg.rotation.x = shuteAngle;
         this.rootGroup.add(sg);
       });
 
-      // 収集ビン (背面壁)
+      // 収集ビン (地面レベル)
       const binMesh = new THREE.Mesh(
         new THREE.BoxGeometry(0.92, 0.55, 0.12),
         this._mat(color, 0.4, 0.6)
       );
-      binMesh.position.set(port.x, SC.y + 0.30, SHUTE_Z0 + SC.portZDepth + 0.06);
+      binMesh.position.set(port.x, 0.30, SHUTE_Z0 + SC.portZDepth + 0.06);
       this.rootGroup.add(binMesh);
 
-      // 床マーカー
+      // 床マーカー (シュート終端)
       const mkr = new THREE.Mesh(
         new THREE.PlaneGeometry(0.75, 0.75),
         new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.25 })
       );
       mkr.rotation.x = -Math.PI / 2;
-      mkr.position.set(port.x, 0.01, SC.z);
+      mkr.position.set(port.x, 0.01, SHUTE_Z0 + SC.portZDepth - 0.3);
       this.rootGroup.add(mkr);
 
       // ラベルスプライト
@@ -174,6 +192,7 @@ export class MobileSorter {
     const cLight = new THREE.PointLight(0xff8833, 0.6, 3);
     cLight.position.set(0, 0.15, 0);
     this.cartGroup.add(cLight);
+
   }
 
   _addLabel(text, hexColor, pos) {
@@ -226,9 +245,10 @@ export class MobileSorter {
     const mesh = this.detachLoad();
     if (mesh) {
       const stackH = port.pallets.length;
+      // シュートを滑り下りて地面に積まれるイメージ
       mesh.position.set(
         port.x,
-        SC.y + 0.28 + stackH * 0.65,
+        0.28 + stackH * 0.28,
         SHUTE_Z0 + SC.portZDepth * 0.65
       );
       port.pallets.push(mesh);

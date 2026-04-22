@@ -15,8 +15,8 @@ const C = RACK_CONFIG;
 
 // ステーション定義 (Z = ±(aisleWidth/2 + depth/2) = ±1.5)
 export const STATIONS = {
-  ST1: { id: 'ST1', label: 'ST1 入庫', side: -1, x: 0.7, y: 0.18 },
-  ST2: { id: 'ST2', label: 'ST2 出庫', side:  1, x: 0.7, y: 0.18 },
+  ST1: { id: 'ST1', label: 'ST1 入庫', side: -1, x: 0.7, y: 1.2 },
+  ST2: { id: 'ST2', label: 'ST2 出庫', side:  1, x: 0.7, y: 1.2 },
 };
 
 export function stationWorldZ(side) {
@@ -138,39 +138,61 @@ export class Warehouse {
 
   _buildStations() {
     Object.values(STATIONS).forEach(st => {
-      const z = stationWorldZ(st.side);
+      const z     = stationWorldZ(st.side);
       const isST1 = st.side === -1;
       const color = isST1 ? 0xd4a017 : 0x1a8a3a;
+      const top   = st.y; // プラットフォーム上面高さ
 
-      // プラットフォーム
-      const platGeo = new THREE.BoxGeometry(0.9, 0.15, C.depth * 0.9);
-      const platMat = this._mat(color, 0.3, 0.7);
-      const platMesh = new THREE.Mesh(platGeo, platMat);
-      platMesh.position.set(st.x, 0.075, z);
+      // ── 支持柱 (4隅、床から top まで) ──
+      const colMat = this._mat(0x3a5070, 0.8, 0.3);
+      [[-0.38, -0.38], [-0.38, 0.38], [0.38, -0.38], [0.38, 0.38]].forEach(([dx, dz]) => {
+        const col = new THREE.Mesh(
+          new THREE.BoxGeometry(0.07, top, 0.07),
+          colMat
+        );
+        col.position.set(st.x + dx, top / 2, z + dz * C.depth * 0.44);
+        col.castShadow = true;
+        this.scene.add(col);
+      });
+
+      // ── プラットフォーム本体 ──
+      const platMesh = new THREE.Mesh(
+        new THREE.BoxGeometry(0.9, 0.15, C.depth * 0.9),
+        this._mat(color, 0.3, 0.7)
+      );
+      platMesh.position.set(st.x, top - 0.075, z);
       platMesh.receiveShadow = true;
       this.scene.add(platMesh);
 
-      // ストライプ（安全ライン）
-      const stripeGeo = new THREE.BoxGeometry(0.88, 0.01, 0.05);
+      // ── 安全柵 ──
+      const railMat = this._mat(0xffcc00, 0.5, 0.5);
+      [0.08, 0.18].forEach(ry => {
+        [-C.depth * 0.44, C.depth * 0.44].forEach(dz => {
+          const rail = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.03, 0.03), railMat);
+          rail.position.set(st.x, top + ry, z + dz);
+          this.scene.add(rail);
+        });
+      });
+
+      // ── ストライプ（安全ライン）──
       const stripeMat = new THREE.MeshBasicMaterial({ color: 0xffff00 });
       [-0.35, 0, 0.35].forEach(zOff => {
-        const s = new THREE.Mesh(stripeGeo, stripeMat);
-        s.position.set(st.x, 0.15, z + zOff);
+        const s = new THREE.Mesh(new THREE.BoxGeometry(0.88, 0.01, 0.05), stripeMat);
+        s.position.set(st.x, top, z + zOff);
         this.scene.add(s);
       });
 
-      // 光柱 (ポイントライト)
+      // ── ポイントライト ──
       const light = new THREE.PointLight(isST1 ? 0xffcc44 : 0x44ff88, 0.8, 3);
-      light.position.set(st.x, 1.2, z);
+      light.position.set(st.x, top + 0.5, z);
       this.scene.add(light);
 
-      // ラベルスプライト
-      this._addLabel(st.label, new THREE.Vector3(st.x, 1.5, z), isST1 ? '#d4a017' : '#1a8a3a');
+      // ── ラベルスプライト ──
+      this._addLabel(st.label, new THREE.Vector3(st.x, top + 0.8, z), isST1 ? '#d4a017' : '#1a8a3a');
 
-      // 物理床
-      this.physics.createBox([0.45, 0.075, 0.45], [st.x, 0.075, z], 0);
+      // ── 物理床 (高架) ──
+      this.physics.createBox([0.45, 0.075, 0.45], [st.x, top - 0.075, z], 0);
 
-      // ステーション情報保存
       st.worldZ = z;
     });
   }
